@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}My profile{% endblock %}
+{% block heading %}My profile{% endblock %}
+{% block content %}
+<div class="card" style="max-width:640px">
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Username</dt><dd>{{ user.username }}</dd>
+      <dt>Name</dt><dd>{{ user.get_full_name|default:"-" }}</dd>
+      <dt>E-mail</dt><dd>{{ user.email|default:"-" }}</dd>
+      <dt>Role</dt><dd><span class="badge text-bg-dark">{{ profile.get_role_display }}</span></dd>
+      <dt>Phone</dt><dd>{{ profile.phone|default:"-" }}</dd>
+      {% if profile.company %}<dt>Company</dt><dd>{{ profile.company }}</dd>{% endif %}
+      <dt>Last sign-in</dt><dd>{{ user.last_login|date:"d M Y H:i"|default:"-" }}</dd>
+    </dl>
+    <hr>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'accounts:password_change' %}"><i class="bi bi-key"></i> Change password</a>
+  </div>
+</div>
+{% endblock %}

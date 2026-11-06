@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+<div id="dashboard-root" data-api-url="{% url 'api_dashboard' %}">
+
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="card stat"><div class="icon blue"><i class=""></i></div><div><div class="num" data-card="active">{{ data.cards.active }}</div><div class="lbl">Active shipments</div></div></div></div>
+    <div class="col-6 col-xl-3"><div class="card stat"><div class="icon warn"><i class=""></i></div><div><div class="num" data-card="out_for_delivery">{{ data.cards.out_for_delivery }}</div><div class="lbl">Out for delivery</div></div></div></div>
+    <div class="col-6 col-xl-3"><div class="card stat"><div class="icon"><i class=""></i></div><div><div class="num" data-card="delivered">{{ data.cards.delivered }}</div><div class="lbl">Delivered</div></div></div></div>
+    <div class="col-6 col-xl-3"><div class="card stat"><div class="icon"><i class=""></i></div><div><div class="num"><span data-card="pod_rate" data-suffix="%">{{ data.cards.pod_rate }}%</span></div><div class="lbl">Delivery confirmation rate</div></div></div></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">Last 14 days</div>
+        <div class="card-body" style="height:280px"><canvas id="dailyChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header d-flex justify-content-between"><span>Recent shipments</span><a href="{% url 'shipment_list' %}" class="small">View all</a></div>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead><tr><th>Tracking no.</th><th>Receiver</th><th>Destination</th><th>Status</th><th>Updated</th></tr></thead>
+            <tbody>
+            {% for s in recent %}
+              <tr>
+                <td><a class="mono fw-semibold" href="{{ s.get_absolute_url }}">{{ s.tracking_number }}</a></td>
+                <td>{{ s.receiver_name }}</td>
+                <td>{{ s.destination }}</td>
+                <td>{% status_badge s.status %}</td>
+                <td class="text-muted small">{{ s.updated_at|timesince }} ago</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-4">No shipments yet.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header">Shipments by status</div>
+        <div class="card-body" style="height:260px"><canvas id="statusChart"></canvas></div>
+      </div>
+
+      {% if data.issues %}
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Record health</span>
+          {% if profile.can_run_checks %}
+          <form method="post" action="{% url 'run_checks' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-arrow-repeat"></i> Run checks</button></form>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="health-ring" id="health-ring" style="--p: {{ data.cards.health }}"><span>{{ data.cards.health }}%</span></div>
+            <div class="small text-muted">of records have no open quality issue (duplicates, stale, overdue, missing documents or confirmation).</div>
+          </div>
+          <ul class="list-unstyled mb-0 small">
+            {% for key, item in data.issues.items %}
+            <li class="d-flex justify-content-between py-1 border-top">
+              <a href="{% url 'shipment_list' %}?issue={{ key }}" class="text-decoration-none text-body">{{ item.label }}</a>
+              <span class="badge text-bg-{% if item.count %}warning{% else %}light border{% endif %}" data-issue="{{ key }}">{{ item.count }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card">
+        <div class="card-header d-flex justify-content-between"><span>Latest alerts</span><a href="{% url 'notifications' %}" class="small">All</a></div>
+        <div class="list-group list-group-flush">
+          {% for n in recent_notifications %}
+          <a class="list-group-item list-group-item-action small {% if not n.is_read %}fw-semibold{% endif %}" href="{% url 'notification_open' n.pk %}">
+            <i class="bi {{ n.kind|kind_icon }} me-1"></i>{{ n.message }}
+            <div class="text-muted fw-normal">{{ n.created_at|timesince }} ago</div>
+          </a>
+          {% empty %}
+          <div class="list-group-item text-muted small">No alerts.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{ data|json_script:"dashboard-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% load static %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

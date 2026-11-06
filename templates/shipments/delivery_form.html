@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Confirm delivery{% endblock %}
+{% block heading %}Confirm delivery · <span class="mono">{{ shipment.tracking_number }}</span>{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <div class="alert alert-light border small">
+          <strong>{{ shipment.sender_name }}</strong> → <strong>{{ shipment.receiver_name }}</strong>, {{ shipment.destination }}.
+          Capture the recipient's signature (or a photo) as proof of delivery. Saving marks the shipment as <em>Delivered</em> and links the proof to the record automatically.
+        </div>
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          {{ form.signature_data }}{{ form.latitude }}{{ form.longitude }}
+          {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+          {% if form.signature_data.errors %}<div class="alert alert-danger">{{ form.signature_data.errors }}</div>{% endif %}
+          <div class="row g-3">
+            <div class="col-md-6">{% with field=form.received_by %}{% include "partials/_form_field.html" %}{% endwith %}</div>
+            <div class="col-md-6">{% with field=form.delivered_at %}{% include "partials/_form_field.html" %}{% endwith %}</div>
+            <div class="col-md-6">{% with field=form.receiver_id_number %}{% include "partials/_form_field.html" %}{% endwith %}</div>
+            <div class="col-md-6">{% with field=form.relationship %}{% include "partials/_form_field.html" %}{% endwith %}</div>
+            <div class="col-12">
+              <label class="form-label">Recipient signature</label>
+              <canvas id="sig-canvas" class="sig-box"></canvas>
+              <div class="d-flex justify-content-between mt-1">
+                <button class="btn btn-sm btn-light" type="button" id="sig-clear"><i class="bi bi-eraser"></i> Clear</button>
+                <span class="small text-muted">Sign with finger, stylus or mouse</span>
+              </div>
+            </div>
+            <div class="col-12">{% with field=form.photo %}{% include "partials/_form_field.html" %}{% endwith %}</div>
+            <div class="col-12">{% with field=form.notes %}{% include "partials/_form_field.html" %}{% endwith %}</div>
+            <div class="col-12">
+              <button class="btn btn-sm btn-outline-secondary" type="button" id="gps-btn"><i class="bi bi-geo-alt"></i> Stamp my location</button>
+              <span class="small text-muted ms-2" id="gps-status"></span>
+            </div>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-success" type="submit"><i class="bi bi-check2-circle"></i> Confirm delivery</button>
+            <a class="btn btn-light" href="{{ shipment.get_absolute_url }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/signature.js' %}"></script>{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Tracking {{ shipment.tracking_number }}{% endblock %}
+{% block heading %}Tracking <span class="mono">{{ shipment.tracking_number }}</span>{% endblock %}
+
+{% block public %}{% include "shipments/_track_card.html" %}{% endblock %}
+{% block content %}{% include "shipments/_track_card.html" %}{% endblock %}

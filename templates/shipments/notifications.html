@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Alerts{% endblock %}
+{% block heading %}Alerts &amp; notifications{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
+  <form method="post" action="{% url 'notifications_read_all' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary"><i class="bi bi-check2-all"></i> Mark all as read</button></form>
+</div>
+<div class="card">
+  <div class="list-group list-group-flush">
+    {% for n in page %}
+    <a class="list-group-item list-group-item-action d-flex gap-3 {% if not n.is_read %}bg-success-subtle{% endif %}" href="{% url 'notification_open' n.pk %}">
+      <i class="bi {{ n.kind|kind_icon }} fs-4 text-secondary"></i>
+      <div class="flex-grow-1">
+        <div class="{% if not n.is_read %}fw-semibold{% endif %}">{{ n.message }}</div>
+        <div class="small text-muted">{{ n.get_kind_display }} · {{ n.created_at|date:"d M Y H:i" }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <div class="list-group-item text-center text-muted py-5">No alerts. All clear.</div>
+    {% endfor %}
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

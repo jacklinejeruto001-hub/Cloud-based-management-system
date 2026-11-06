@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Users & roles{% endblock %}
+{% block heading %}Users &amp; roles{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <p class="text-muted mb-0">Role-based access control: each role sees and does only what its job needs.</p>
+  <a class="btn btn-primary" href="{% url 'accounts:user_create' %}"><i class="bi bi-person-plus"></i> Add user</a>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Username</th><th>Name</th><th>E-mail</th><th>Role</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td class="fw-semibold">{{ u.username }}</td>
+          <td>{{ u.get_full_name|default:"-" }}</td>
+          <td>{{ u.email|default:"-" }}</td>
+          <td><span class="badge text-bg-secondary">{{ u.profile.get_role_display }}</span></td>
+          <td>{% if u.is_active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-light border">Disabled</span>{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:user_edit' u.pk %}">Edit</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">Permission matrix</div>
+  <div class="table-responsive">
+    <table class="table table-sm text-center mb-0 align-middle">
+      <thead><tr><th class="text-start">Capability</th><th>Admin</th><th>Manager</th><th>Staff</th><th>Dispatcher</th><th>Client</th></tr></thead>
+      <tbody>
+        <tr><td class="text-start">View shipments</td><td>All</td><td>All</td><td>All</td><td>Assigned</td><td>Own</td></tr>
+        <tr><td class="text-start">Register / edit shipments</td><td>✔</td><td>✔</td><td>✔</td><td>–</td><td>–</td></tr>
+        <tr><td class="text-start">Upload documents</td><td>✔</td><td>✔</td><td>✔</td><td>–</td><td>–</td></tr>
+        <tr><td class="text-start">Status updates &amp; delivery confirmation</td><td>✔</td><td>✔</td><td>✔</td><td>✔</td><td>–</td></tr>
+        <tr><td class="text-start">Archive / restore, duplicate review</td><td>✔</td><td>✔</td><td>–</td><td>–</td><td>–</td></tr>
+        <tr><td class="text-start">Reports, audit trail, record checks</td><td>✔</td><td>✔</td><td>–</td><td>–</td><td>–</td></tr>
+        <tr><td class="text-start">Manage users</td><td>✔</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% load cbs_tags %}
+<div class="mx-auto" style="max-width:720px">
+  <div class="card mb-3">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="text-muted small">Tracking number</div>
+          <div class="mono fs-4 fw-bold">{{ shipment.tracking_number }}</div>
+        </div>
+        <div class="fs-5">{% status_badge shipment.status %}</div>
+      </div>
+      <hr>
+      <dl class="kv">
+        <dt>From</dt><dd>{{ shipment.origin }}</dd>
+        <dt>To</dt><dd>{{ shipment.destination }}</dd>
+        <dt>Receiver</dt><dd>{{ shipment.receiver_name|mask_name }}</dd>
+        {% if shipment.expected_delivery and not shipment.is_final %}<dt>Expected</dt><dd>{{ shipment.expected_delivery|date:"l, d M Y" }}</dd>{% endif %}
+        <dt>Packages</dt><dd>{{ shipment.packages }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  {% if pod %}
+  <div class="alert alert-success d-flex gap-3 align-items-center">
+    <i class="bi bi-patch-check fs-2"></i>
+    <div><strong>Delivered and confirmed.</strong><br>
+      Received by {{ pod.received_by|mask_name }} on {{ pod.delivered_at|date:"d M Y \a\t H:i" }}. Proof of delivery is on file.</div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">Shipment journey</div>
+    <div class="card-body">
+      <ul class="timeline">
+        {% for e in events %}
+        <li>
+          <div>{% status_badge e.status %}{% if e.location %} <span class="ms-1"><i class="bi bi-geo-alt"></i> {{ e.location }}</span>{% endif %}</div>
+          <div class="when">{{ e.created_at|date:"d M Y H:i" }}</div>
+        </li>
+        {% empty %}<li><span class="text-muted">No updates yet.</span></li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <p class="text-center mt-3"><a class="text-white-50 small" href="{% url 'track' %}">Track another shipment</a></p>
+</div>

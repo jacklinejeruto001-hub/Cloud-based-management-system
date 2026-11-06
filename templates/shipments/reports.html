@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load cbs_tags static %}
+{% block title %}Reports{% endblock %}
+{% block heading %}Management report{% endblock %}
+{% block content %}
+<div class="card mb-3 no-print">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-6 col-md-2"><label class="form-label small mb-1">From</label><input type="date" name="from" value="{{ filters.from }}" class="form-control"></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-1">To</label><input type="date" name="to" value="{{ filters.to }}" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label small mb-1">Status</label>
+        <select name="status" class="form-select"><option value="">All</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></div>
+      <div class="col-auto d-flex gap-2">
+        <button class="btn btn-primary"><i class="bi bi-funnel"></i> Generate</button>
+        <a class="btn btn-outline-secondary" href="{% url 'report_csv' %}?{{ request.GET.urlencode }}"><i class="bi bi-filetype-csv"></i> Export CSV</a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Print / PDF</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<p class="text-muted small">Period {{ filters.from }} to {{ filters.to }} · generated {{ generated|date:"d M Y H:i" }}</p>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="card stat"><div class="icon blue"><i class="bi bi-boxes"></i></div><div><div class="num">{{ total }}</div><div class="lbl">Shipments registered</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat"><div class="icon"><i class="bi bi-check2-circle"></i></div><div><div class="num">{{ delivered_count }}</div><div class="lbl">Delivered</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat"><div class="icon"><i class="bi bi-patch-check"></i></div><div><div class="num">{{ pod_rate }}%</div><div class="lbl">Delivered with proof</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card stat"><div class="icon warn"><i class="bi bi-hourglass-split"></i></div><div><div class="num">{% if avg_hours is not None %}{{ avg_hours }} h{% else %}–{% endif %}</div><div class="lbl">Avg. time to deliver</div></div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100"><div class="card-header">Shipments by status</div>
+      <div class="card-body" style="height:260px"><canvas id="reportChart"></canvas></div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100"><div class="card-header">Data quality (live figures for this selection)</div>
+      <ul class="list-group list-group-flush small">
+        {% for key, item in issue_counts.items %}
+        <li class="list-group-item d-flex justify-content-between"><span>{{ item.label }}</span><span class="badge text-bg-{% if item.count %}warning{% else %}success{% endif %}">{{ item.count }}</span></li>
+        {% endfor %}
+        <li class="list-group-item d-flex justify-content-between"><span>Duplicates reviewed by managers</span><span class="badge text-bg-light border">{{ reviewed_duplicates }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Archived records</span><span class="badge text-bg-light border">{{ archived_count }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Documents on file / outdated versions kept</span><span class="badge text-bg-light border">{{ docs_total }} / {{ docs_outdated }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Audit-trail events in period</span><span class="badge text-bg-light border">{{ audit_events }}</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100"><div class="card-header">Top destinations</div>
+      <ul class="list-group list-group-flush">
+        {% for d in destinations %}<li class="list-group-item d-flex justify-content-between">{{ d.destination }}<span class="badge text-bg-secondary">{{ d.c }}</span></li>
+        {% empty %}<li class="list-group-item text-muted">No data.</li>{% endfor %}
+      </ul></div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card h-100"><div class="card-header">Shipments (first 50 – export CSV for all)</div>
+      <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+        <thead><tr><th>Tracking no.</th><th>Receiver</th><th>Destination</th><th>Status</th><th>Created</th></tr></thead>
+        <tbody>
+        {% for s in shipments %}<tr><td><a class="mono" href="{{ s.get_absolute_url }}">{{ s.tracking_number }}</a></td><td>{{ s.receiver_name }}</td><td>{{ s.destination }}</td><td>{% status_badge s.status %}</td><td class="small text-muted">{{ s.created_at|date:"d M Y" }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-center text-muted py-3">No shipments in this period.</td></tr>{% endfor %}
+        </tbody></table></div></div>
+  </div>
+</div>
+{{ chart|json_script:"report-chart-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/reports.js' %}"></script>
+{% endblock %}

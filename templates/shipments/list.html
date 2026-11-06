@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Shipments{% endblock %}
+{% block heading %}{% if show_archived %}Archived shipments{% else %}Shipments{% endif %}{% endblock %}
+{% block content %}
+<div id="list-root" data-pulse-url="{% url 'api_pulse' %}">
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3"><label class="form-label small mb-1">Search</label>
+          <input type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Tracking no., name, place, reference"></div>
+        <div class="col-6 col-md-2"><label class="form-label small mb-1">Status</label>
+          <select name="status" class="form-select"><option value="">All</option>
+            {% for value, label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select></div>
+        {% if profile.is_internal %}
+        <div class="col-6 col-md-2"><label class="form-label small mb-1">Record issue</label>
+          <select name="issue" class="form-select"><option value="">Any</option>
+            {% for key, label in issues.items %}<option value="{{ key }}" {% if filters.issue == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select></div>
+        {% endif %}
+        <div class="col-6 col-md-1"><label class="form-label small mb-1">From</label><input type="date" name="from" value="{{ filters.from }}" class="form-control"></div>
+        <div class="col-6 col-md-1"><label class="form-label small mb-1">To</label><input type="date" name="to" value="{{ filters.to }}" class="form-control"></div>
+        {% if profile.can_delete_shipments %}
+        <div class="col-6 col-md-1"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="archived" value="1" id="arch" {% if show_archived %}checked{% endif %}><label class="form-check-label small" for="arch">Archived</label></div></div>
+        {% endif %}
+        <div class="col-auto ms-auto d-flex gap-2">
+          <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Filter</button>
+          <a class="btn btn-light" href="{% url 'shipment_list' %}">Reset</a>
+          {% if profile.can_create_shipments %}<a class="btn btn-outline-primary" href="{% url 'shipment_create' %}"><i class="bi bi-plus-lg"></i> New</a>{% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>Tracking no.</th><th>Sender → Receiver</th><th>Route</th><th>Status</th><th>Expected</th><th>Ver.</th><th>Updated</th><th></th></tr></thead>
+        <tbody>
+        {% for s in page %}
+          <tr>
+            <td><a class="mono fw-semibold" href="{{ s.get_absolute_url }}">{{ s.tracking_number }}</a>{% if s.reference_number %}<div class="small text-muted">{{ s.reference_number }}</div>{% endif %}</td>
+            <td>{{ s.sender_name }}<div class="small text-muted">→ {{ s.receiver_name }}</div></td>
+            <td>{{ s.origin }} <i class="bi bi-arrow-right-short"></i> {{ s.destination }}</td>
+            <td>{% status_badge s.status %}</td>
+            <td class="small {% if s.is_overdue %}text-danger fw-semibold{% endif %}">{{ s.expected_delivery|date:"d M Y"|default:"-" }}{% if s.is_overdue %} <i class="bi bi-alarm"></i>{% endif %}</td>
+            <td class="text-muted small">v{{ s.version }}</td>
+            <td class="text-muted small">{{ s.updated_at|timesince }} ago</td>
+            <td class="text-end">
+              {% if s.is_flagged_duplicate %}<span class="badge text-bg-warning" title="Possible duplicate"><i class="bi bi-files"></i></span>{% endif %}
+              {% if s.is_archived %}<span class="badge text-bg-secondary">Archived</span>{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-5">No shipments match your filters.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

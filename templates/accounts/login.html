@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block public %}
+<div class="login-wrap">
+  <div class="card">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <i class="bi bi-box-seam fs-1 text-success"></i>
+        <h2 class="h4 mt-2 mb-0">Sign in to CBSRMS</h2>
+        <p class="text-muted small">Cloud-Based Shipment Records Management System</p>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>{% endif %}
+        <div class="mb-3">{{ form.username }}</div>
+        <div class="mb-3">{{ form.password }}</div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="btn btn-primary w-100" type="submit">Sign in</button>
+      </form>
+      <hr>
+      <a class="small" href="{% url 'track' %}"><i class="bi bi-geo-alt"></i> Track a shipment without signing in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

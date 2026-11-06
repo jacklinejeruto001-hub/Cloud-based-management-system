@@ -1,0 +1,28 @@
+databases:
+  - name: cbsrms-db
+    plan: free
+    databaseName: cbsrms
+    user: cbsrms
+
+services:
+  - type: web
+    name: cbsrms
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cbsrms-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: COMPANY_NAME
+        value: "Your Logistics Co."
+      # Free web services have an EPHEMERAL disk: uploaded files vanish on redeploy.
+      # For real use attach a persistent disk and set MEDIA_ROOT to its mount path.

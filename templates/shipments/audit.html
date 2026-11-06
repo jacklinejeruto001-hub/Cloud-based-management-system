@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Audit trail{% endblock %}
+{% block heading %}Audit trail{% endblock %}
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-2"><label class="form-label small mb-1">User</label><input name="user" value="{{ filters.user }}" class="form-control" placeholder="username"></div>
+      <div class="col-md-2"><label class="form-label small mb-1">Action</label>
+        <select name="action" class="form-select"><option value="">All</option>
+          {% for value, label in actions %}<option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></div>
+      <div class="col-md-3"><label class="form-label small mb-1">Record</label><input name="q" value="{{ filters.q }}" class="form-control" placeholder="tracking no. / model"></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-1">From</label><input type="date" name="from" value="{{ filters.from }}" class="form-control"></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-1">To</label><input type="date" name="to" value="{{ filters.to }}" class="form-control"></div>
+      <div class="col-auto"><button class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button> <a class="btn btn-light" href="{% url 'audit_log' %}">Reset</a></div>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>When</th><th>User</th><th>Action</th><th>Record</th><th>Details</th><th>IP</th></tr></thead>
+      <tbody>
+      {% for log in page %}
+        <tr>
+          <td class="small text-nowrap">{{ log.timestamp|date:"d M Y H:i:s" }}</td>
+          <td>{{ log.username|default:"system" }}</td>
+          <td><span class="badge text-bg-{% if log.action == 'DELETE' or log.action == 'LOGIN_FAILED' %}danger{% elif log.action == 'CREATE' or log.action == 'CONFIRM' %}success{% elif log.action == 'ARCHIVE' %}warning{% else %}secondary{% endif %}">{{ log.get_action_display }}</span></td>
+          <td class="small">{{ log.model_name }} <span class="mono">{{ log.object_repr }}</span></td>
+          <td class="small">
+            {% for key, val in log.changes.items %}
+              {% if val|is_pair %}<div><strong>{{ key|field_label }}:</strong> <span class="change-old">{{ val.0|default_if_none:"-" }}</span> → <span class="change-new">{{ val.1|default_if_none:"-" }}</span></div>
+              {% else %}<div><strong>{{ key|field_label }}:</strong> {{ val }}</div>{% endif %}
+            {% endfor %}
+          </td>
+          <td class="small text-muted">{{ log.ip_address|default:"" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No audit entries match.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+<p class="text-muted small mt-2">The audit trail is append-only: entries cannot be edited or deleted from the system.</p>
+{% endblock %}

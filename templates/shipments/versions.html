@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}History {{ shipment.tracking_number }}{% endblock %}
+{% block heading %}Version history · <span class="mono">{{ shipment.tracking_number }}</span>{% endblock %}
+{% block content %}
+<p><a href="{{ shipment.get_absolute_url }}"><i class="bi bi-arrow-left"></i> Back to shipment</a></p>
+<div class="card">
+  <div class="card-body">
+    {% for row in rows %}
+    <div class="d-flex gap-3 pb-3 mb-3 {% if not forloop.last %}border-bottom{% endif %}">
+      <div><span class="badge {% if forloop.first %}text-bg-success{% else %}text-bg-secondary{% endif %} fs-6">v{{ row.version.version_number }}</span></div>
+      <div class="flex-grow-1">
+        <div class="fw-semibold">{{ row.version.summary|default:"Change" }}{% if forloop.first %} <span class="badge text-bg-light border">current</span>{% endif %}</div>
+        <div class="small text-muted mb-2">{{ row.version.changed_at|date:"d M Y H:i" }} · {{ row.version.changed_by|display_name:"system" }}</div>
+        {% if row.changes %}
+        <ul class="list-unstyled small mb-0">
+          {% for label, old, new in row.changes %}
+          <li><strong>{{ label }}:</strong> <span class="change-old">{{ old }}</span> → <span class="change-new">{{ new }}</span></li>
+          {% endfor %}
+        </ul>
+        {% elif forloop.last %}<span class="small text-muted">Original record.</span>{% endif %}
+      </div>
+      {% if not forloop.first and profile.can_edit_shipments and not shipment.is_archived %}
+      <form method="post" action="{% url 'version_restore' shipment.pk row.version.version_number %}" data-confirm="Restore the record to version {{ row.version.version_number }}? This is saved as a new version; nothing is lost.">
+        {% csrf_token %}<button class="btn btn-sm btn-outline-primary">Restore this version</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

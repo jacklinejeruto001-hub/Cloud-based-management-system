@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Duplicate review{% endblock %}
+{% block heading %}Duplicate review{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <p class="text-muted mb-0">Records the system flagged as possible duplicates. Decide whether each one is a real, separate shipment or a duplicate to archive.</p>
+  <form method="post" action="{% url 'scan_duplicates' %}">{% csrf_token %}<button class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Scan all records</button></form>
+</div>
+
+{% for s in flagged %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between">
+    <span>Flagged <span class="mono">{{ s.tracking_number }}</span></span>
+    <span class="text-muted small fw-normal">registered {{ s.created_at|date:"d M Y H:i" }} by {{ s.created_by|display_name }}</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="small text-muted mb-1">Flagged record</div>
+        <dl class="kv">
+          <dt>Tracking no.</dt><dd><a class="mono" href="{{ s.get_absolute_url }}">{{ s.tracking_number }}</a></dd>
+          <dt>Sender → Receiver</dt><dd>{{ s.sender_name }} → {{ s.receiver_name }}</dd>
+          <dt>Route</dt><dd>{{ s.origin }} → {{ s.destination }}</dd>
+          <dt>Goods</dt><dd>{{ s.description|truncatechars:80 }} · {{ s.weight_kg }} kg · {{ s.packages }} pkg</dd>
+          <dt>Reference</dt><dd>{{ s.reference_number|default:"-" }}</dd>
+          <dt>Status</dt><dd>{% status_badge s.status %}</dd>
+        </dl>
+      </div>
+      <div class="col-md-6 border-start">
+        <div class="small text-muted mb-1">Existing record it matches</div>
+        {% if s.duplicate_of %}
+        {% with o=s.duplicate_of %}
+        <dl class="kv">
+          <dt>Tracking no.</dt><dd><a class="mono" href="{{ o.get_absolute_url }}">{{ o.tracking_number }}</a></dd>
+          <dt>Sender → Receiver</dt><dd>{{ o.sender_name }} → {{ o.receiver_name }}</dd>
+          <dt>Route</dt><dd>{{ o.origin }} → {{ o.destination }}</dd>
+          <dt>Goods</dt><dd>{{ o.description|truncatechars:80 }} · {{ o.weight_kg }} kg · {{ o.packages }} pkg</dd>
+          <dt>Reference</dt><dd>{{ o.reference_number|default:"-" }}</dd>
+          <dt>Status</dt><dd>{% status_badge o.status %}</dd>
+        </dl>
+        {% endwith %}
+        {% else %}<span class="text-muted">Original no longer available.</span>{% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <form method="post" action="{% url 'duplicate_resolve' s.pk %}" data-confirm="Archive {{ s.tracking_number }} as a duplicate?">
+        {% csrf_token %}<input type="hidden" name="action" value="archive"><button class="btn btn-danger btn-sm"><i class="bi bi-archive"></i> It is a duplicate – archive</button></form>
+      <form method="post" action="{% url 'duplicate_resolve' s.pk %}">
+        {% csrf_token %}<input type="hidden" name="action" value="not_duplicate"><button class="btn btn-outline-success btn-sm"><i class="bi bi-check2"></i> Not a duplicate – keep</button></form>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="card"><div class="card-body text-center text-muted py-5"><i class="bi bi-shield-check fs-1 text-success"></i><p class="mt-2 mb-0">No duplicates awaiting review.</p></div></div>
+{% endfor %}
+{% endblock %}

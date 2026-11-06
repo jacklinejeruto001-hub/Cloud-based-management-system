@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load cbs_tags %}
+{% block title %}Proof of delivery{% endblock %}
+{% block heading %}Proof of delivery{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3 no-print">
+  <a href="{{ shipment.get_absolute_url }}"><i class="bi bi-arrow-left"></i> Back to shipment</a>
+  <button class="btn btn-sm btn-outline-primary" onclick="window.print()"><i class="bi bi-printer"></i> Print / save as PDF</button>
+</div>
+<div class="card" style="max-width:820px">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div><h2 class="h4 mb-0">Proof of Delivery</h2><div class="text-muted">{{ company_name }}</div></div>
+      <div class="text-end"><div class="mono fw-bold fs-5">{{ shipment.tracking_number }}</div><span class="badge text-bg-success">Delivered</span></div>
+    </div>
+    <hr>
+    <div class="row g-4">
+      <div class="col-md-6"><dl class="kv">
+        <dt>Sender</dt><dd>{{ shipment.sender_name }}</dd>
+        <dt>From</dt><dd>{{ shipment.origin }}</dd>
+        <dt>Consignee</dt><dd>{{ shipment.receiver_name }}</dd>
+        <dt>To</dt><dd>{{ shipment.destination }}</dd>
+        <dt>Goods</dt><dd>{{ shipment.description|truncatechars:120 }} ({{ shipment.packages }} pkg, {{ shipment.weight_kg }} kg)</dd>
+      </dl></div>
+      <div class="col-md-6"><dl class="kv">
+        <dt>Delivered at</dt><dd>{{ pod.delivered_at|date:"d M Y H:i" }}</dd>
+        <dt>Received by</dt><dd><strong>{{ pod.received_by }}</strong></dd>
+        {% if pod.relationship %}<dt>Relationship</dt><dd>{{ pod.relationship }}</dd>{% endif %}
+        {% if pod.receiver_id_number %}<dt>ID number</dt><dd>{{ pod.receiver_id_number }}</dd>{% endif %}
+        <dt>Confirmed by</dt><dd>{{ pod.confirmed_by|display_name }}</dd>
+        {% if pod.latitude %}<dt>Location</dt><dd>{{ pod.latitude }}, {{ pod.longitude }}</dd>{% endif %}
+        {% if pod.notes %}<dt>Notes</dt><dd>{{ pod.notes }}</dd>{% endif %}
+      </dl></div>
+    </div>
+    <div class="row g-4 mt-1">
+      {% if pod.signature %}
+      <div class="col-md-6"><div class="small text-muted mb-1">Signature</div>
+        <img src="{% url 'pod_file' pod.pk 'signature' %}" alt="Recipient signature" class="img-fluid border rounded bg-white p-2" style="max-height:180px"></div>
+      {% endif %}
+      {% if pod.photo %}
+      <div class="col-md-6"><div class="small text-muted mb-1">Photo</div>
+        <img src="{% url 'pod_file' pod.pk 'photo' %}" alt="Delivery photo" class="img-fluid border rounded" style="max-height:240px"></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
